@@ -4,57 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BarberFlow - Agendamentos</title>
-    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#000000">
+    <style>
+        /* Forçando a fonte Courier New / Monospace em toda a aplicação */
+        body, button, input, select, textarea {
+            font-family: 'Courier New', Courier, monospace !important;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+<body class="bg-black text-white min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
 
     <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 text-center">
-        <h1 class="text-xl font-bold text-amber-400">💈 BarberFlow</h1>
-        <p class="text-xs text-slate-400">Gerenciamento de Vagas às 10:00</p>
+    <header class="bg-black border-b border-amber-500/30 p-4 text-center shadow-lg">
+        <h1 class="text-xl font-bold text-amber-400 tracking-wider">💈 BARBERFLOW</h1>
+        <p class="text-xs text-amber-200/60 uppercase tracking-widest mt-1">Gestão de Horários • 5 Vagas por Slot</p>
     </header>
 
     <!-- Navegação por Abas -->
-    <nav class="flex border-b border-slate-700 bg-slate-800/50">
-        <button onclick="mudarAba('cliente')" id="btn-cliente" class="flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition">Agendar</button>
-        <button onclick="mudarAba('admin')" id="btn-admin" class="flex-1 py-3 text-center font-medium text-slate-400 transition">Painel (Admin)</button>
+    <nav class="flex border-b border-amber-500/30 bg-neutral-950">
+        <button onclick="mudarAba('cliente')" id="btn-cliente" class="flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider">AGENDAR</button>
+        <button onclick="mudarAba('admin')" id="btn-admin" class="flex-1 py-3 text-center font-bold text-neutral-500 transition tracking-wider">PAINEL (ADMIN)</button>
     </nav>
 
     <!-- Conteúdo Principal -->
-    <main class="flex-1 p-4 max-w-md w-mx mx-auto w-full">
+    <main class="flex-1 p-4 max-w-md mx-auto w-full">
 
         <!-- ABA 1: CLIENTE -->
         <section id="aba-cliente" class="space-y-4">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-semibold mb-3 text-slate-200">Novo Agendamento</h2>
+            <div class="bg-neutral-950 p-5 rounded-none border border-amber-500/40 shadow-2xl relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600"></div>
                 
-                <form id="form-agendamento" onsubmit="realizarAgendamento(event)" class="space-y-3">
+                <h2 class="text-base font-bold mb-4 text-amber-400 tracking-wide uppercase">>> Novo Agendamento</h2>
+                
+                <form id="form-agendamento" onsubmit="realizarAgendamento(event)" class="space-y-4">
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Seu Nome</label>
-                        <input type="text" id="nome" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400" placeholder="Ex: João Silva">
+                        <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Seu Nome</label>
+                        <input type="text" id="nome" required class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400 placeholder:text-neutral-700" placeholder="Ex: João Silva">
                     </div>
 
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Seu WhatsApp</label>
-                        <input type="tel" id="telefone" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400" placeholder="Ex: 12999999999">
+                        <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Seu WhatsApp</label>
+                        <input type="tel" id="telefone" required class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400 placeholder:text-neutral-700" placeholder="Ex: 12999999999">
                     </div>
 
                     <div>
-                        <label class="block text-sm text-slate-400 mb-1">Data Desejada</label>
-                        <input type="date" id="data" required onchange="verificarVagas()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+                        <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Serviço Desejado</label>
+                        <select id="servico" required class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
+                            <option value="">Selecione o serviço</option>
+                            <option value="Corte">Corte</option>
+                            <option value="Barba">Barba</option>
+                            <option value="Corte + Barba">Corte + Barba</option>
+                        </select>
                     </div>
 
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-300">Horário Fixo: <strong>10:00</strong></span>
-                            <span id="status-vagas" class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">Selecione uma data</span>
+                    <div>
+                        <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Data Desejada</label>
+                        <input type="date" id="data" required onchange="checarDisponibilidade()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Horário Desejado</label>
+                        <select id="horario" required disabled onchange="atualizarStatusVagas()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400 disabled:opacity-50">
+                            <option value="">Selecione a data primeiro</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00 (1:00)</option>
+                            <option value="14:00">14:00 (2:00)</option>
+                            <option value="15:00">15:00 (3:00)</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-black p-3 border border-amber-500/20">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-neutral-300">DISPONIBILIDADE:</span>
+                            <span id="status-vagas" class="px-2 py-1 bg-neutral-900 text-neutral-400 border border-neutral-800 font-bold">Aguardando dados</span>
                         </div>
                     </div>
 
-                    <button type="submit" id="btn-enviar" disabled class="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold py-2.5 rounded-lg transition">
+                    <button type="submit" id="btn-enviar" disabled class="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-neutral-900 disabled:text-neutral-600 disabled:border-neutral-800 text-black font-bold py-3 transition tracking-wider uppercase border border-amber-400">
                         Confirmar Agendamento
                     </button>
                 </form>
@@ -63,18 +94,23 @@
 
         <!-- ABA 2: PAINEL ADMIN -->
         <section id="aba-admin" class="hidden space-y-4">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-semibold mb-3 text-slate-200">Agendamentos Realizados</h2>
-                <div id="lista-agendamentos" class="space-y-2 text-sm text-slate-300">
-                    <p class="text-slate-500 text-center py-4">Nenhum agendamento carregado.</p>
+            <div class="bg-neutral-950 p-5 rounded-none border border-amber-500/40 shadow-2xl relative">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600"></div>
+                
+                <h2 class="text-base font-bold mb-4 text-amber-400 tracking-wide uppercase">>> Agendamentos Ativos</h2>
+                <div id="lista-agendamentos" class="space-y-3 text-sm text-neutral-300">
+                    <p class="text-neutral-600 text-center py-6">Nenhum agendamento carregado.</p>
                 </div>
             </div>
         </section>
 
     </main>
 
+    <footer class="text-center py-3 text-[10px] text-neutral-600 border-t border-neutral-900 tracking-widest">
+        BARBERFLOW SYSTEM &copy; 2026
+    </footer>
+
     <script>
-        // Simulando banco local via localStorage para demonstração imediata
         function carregarBanco() {
             return JSON.parse(localStorage.getItem('barberflow_db')) || [];
         }
@@ -88,31 +124,52 @@
             document.getElementById('aba-cliente').classList.toggle('hidden', !isCliente);
             document.getElementById('aba-admin').classList.toggle('hidden', isCliente);
             
-            document.getElementById('btn-cliente').className = isCliente ? 'flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition' : 'flex-1 py-3 text-center font-medium text-slate-400 transition';
-            document.getElementById('btn-admin').className = !isCliente ? 'flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition' : 'flex-1 py-3 text-center font-medium text-slate-400 transition';
+            document.getElementById('btn-cliente').className = isCliente ? 'flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider' : 'flex-1 py-3 text-center font-bold text-neutral-600 transition tracking-wider';
+            document.getElementById('btn-admin').className = !isCliente ? 'flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider' : 'flex-1 py-3 text-center font-bold text-neutral-600 transition tracking-wider';
 
             if (!isCliente) renderizarPainelAdmin();
         }
 
-        function verificarVagas() {
+        function checarDisponibilidade() {
             const dataSelecionada = document.getElementById('data').value;
-            if (!dataSelecionada) return;
+            const selectHorario = document.getElementById('horario');
+            
+            if (!dataSelecionada) {
+                selectHorario.disabled = true;
+                selectHorario.value = "";
+                document.getElementById('status-vagas').textContent = "Selecione uma data";
+                document.getElementById('btn-enviar').disabled = true;
+                return;
+            }
 
-            const db = carregarBanco();
-            // Filtra agendamentos para a data selecionada às 10:00
-            const agendadosNoDia = db.filter(item => item.data === dataSelecionada && item.horario === '10:00');
-            const vagasRestantes = 5 - agendadosNoDia.length;
+            selectHorario.disabled = false;
+            atualizarStatusVagas();
+        }
 
+        function atualizarStatusVagas() {
+            const dataSelecionada = document.getElementById('data').value;
+            const horarioSelecionado = document.getElementById('horario').value;
             const statusBadge = document.getElementById('status-vagas');
             const btnEnviar = document.getElementById('btn-enviar');
 
+            if (!horarioSelecionado) {
+                statusBadge.textContent = "Selecione um horário";
+                statusBadge.className = "px-2 py-1 bg-neutral-900 text-neutral-400 border border-neutral-800 font-bold";
+                btnEnviar.disabled = true;
+                return;
+            }
+
+            const db = carregarBanco();
+            const agendadosNoSlot = db.filter(item => item.data === dataSelecionada && item.horario === horarioSelecionado);
+            const vagasRestantes = 5 - agendadosNoSlot.length;
+
             if (vagasRestantes <= 0) {
-                statusBadge.textContent = "Esgotado (0/5 vagas)";
-                statusBadge.className = "text-xs px-2 py-1 rounded bg-red-900/50 text-red-400 font-medium";
+                statusBadge.textContent = "ESGOTADO (0/5 VAGAS)";
+                statusBadge.className = "px-2 py-1 bg-red-950/80 text-red-400 border border-red-900 font-bold";
                 btnEnviar.disabled = true;
             } else {
-                statusBadge.textContent = `${vagasRestantes} de 5 vagas disponíveis`;
-                statusBadge.className = "text-xs px-2 py-1 rounded bg-emerald-900/50 text-emerald-400 font-medium";
+                statusBadge.textContent = `${vagasRestantes} DE 5 VAGAS LIVRES`;
+                statusBadge.className = "px-2 py-1 bg-amber-950/60 text-amber-400 border border-amber-900/50 font-bold";
                 btnEnviar.disabled = false;
             }
         }
@@ -121,32 +178,32 @@
             e.preventDefault();
             const nome = document.getElementById('nome').value;
             const telefone = document.getElementById('telefone').value;
+            const servico = document.getElementById('servico').value;
             const data = document.getElementById('data').value;
-            const horario = "10:00";
+            const horario = document.getElementById('horario').value;
 
             let db = carregarBanco();
-            const agendadosNoDia = db.filter(item => item.data === data && item.horario === horario);
+            const agendadosNoSlot = db.filter(item => item.data === data && item.horario === horario);
 
-            if (agendadosNoDia.length >= 5) {
-                alert("Infelizmente as vagas para este dia esgotaram!");
+            if (agendadosNoSlot.length >= 5) {
+                alert("Infelizmente as vagas para este horário esgotaram!");
+                atualizarStatusVagas();
                 return;
             }
 
-            // Salva novo agendamento
-            const novoAgendamento = { id: Date.now(), nome, telefone, data, horario };
+            const novoAgendamento = { id: Date.now(), nome, telefone, servico, data, horario };
             db.push(novoAgendamento);
             salvarBanco(db);
 
-            // Dispara redirecionamento para o seu WhatsApp (12991421077)
             const meuWhatsApp = "5512991421077";
-            const mensagem = `Novo Agendamento! 💈%0A*Cliente:* ${encodeURIComponent(nome)}%0A*Tel:* ${encodeURIComponent(telefone)}%0A*Data:* ${data}%0A*Horário:* 10:00`;
+            const mensagem = `Novo Agendamento! 💈%0A*Cliente:* ${encodeURIComponent(nome)}%0A*Tel:* ${encodeURIComponent(telefone)}%0A*Serviço:* ${encodeURIComponent(servico)}%0A*Data:* ${data}%0A*Horário:* ${horario}`;
             
-            // Abre o link do WhatsApp para notificar a central
             window.open(`https://api.whatsapp.com/send?phone=${meuWhatsApp}&text=${mensagem}`, '_blank');
 
             alert("Agendamento realizado com sucesso!");
             document.getElementById('form-agendamento').reset();
-            document.getElementById('status-vagas').textContent = "Selecione uma data";
+            document.getElementById('horario').disabled = true;
+            document.getElementById('status-vagas').textContent = "Aguardando dados";
             document.getElementById('btn-enviar').disabled = true;
         }
 
@@ -155,17 +212,20 @@
             const container = document.getElementById('lista-agendamentos');
 
             if (db.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum agendamento registrado ainda.</p>`;
+                container.innerHTML = `<p class="text-neutral-600 text-center py-6 tracking-wide">Nenhum agendamento registrado.</p>`;
                 return;
             }
 
+            db.sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
+
             container.innerHTML = db.map(item => `
-                <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                <div class="bg-black p-3 border border-amber-500/20 flex justify-between items-center">
                     <div>
-                        <p class="font-semibold text-slate-200">${item.nome}</p>
-                        <p class="text-xs text-slate-400">📅 ${item.data} às ${item.horario} | 📱 ${item.telefone}</p>
+                        <p class="font-bold text-amber-300 tracking-wider">${item.nome} <span class="text-xs text-neutral-400 font-normal">(${item.servico || 'Corte'})</span></p>
+                        <p class="text-xs text-neutral-400 mt-0.5">[📅 ${item.data} ⏰ ${item.horario}]</p>
+                        <p class="text-xs text-neutral-500 mt-0.5">TEL: ${item.telefone}</p>
                     </div>
-                    <button onclick="excluirAgendamento(${item.id})" class="text-red-400 hover:text-red-300 text-xs bg-red-950/40 px-2.5 py-1.5 rounded border border-red-900/50">Cancelar</button>
+                    <button onclick="excluirAgendamento(${item.id})" class="text-red-400 hover:text-red-300 text-xs bg-red-950/40 px-2.5 py-1.5 border border-red-900/50 uppercase tracking-wider">Cancelar</button>
                 </div>
             `).join('');
         }
@@ -179,7 +239,6 @@
             }
         }
 
-        // Registro do Service Worker para PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log('SW falhou:', err));
         }
