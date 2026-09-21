@@ -20,7 +20,7 @@
     <!-- Header -->
     <header class="bg-black border-b border-amber-500/30 p-4 text-center shadow-lg">
         <h1 class="text-xl font-bold text-amber-400 tracking-wider">💈 BARBERFLOW</h1>
-        <p class="text-xs text-amber-200/60 uppercase tracking-widest mt-1">Gestão de Horários • 5 Vagas por Slot</p>
+        <p class="text-xs text-amber-200/60 uppercase tracking-widest mt-1">Gestão de Horários • 1 Vaga por Horário</p>
     </header>
 
     <!-- Navegação por Abas -->
@@ -62,26 +62,20 @@
 
                     <div>
                         <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Data Desejada</label>
-                        <input type="date" id="data" required onchange="checarDisponibilidade()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
+                        <input type="date" id="data" required onchange="atualizarHorariosDisponiveis()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
                     </div>
 
                     <div>
                         <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Horário Desejado</label>
-                        <select id="horario" required disabled onchange="atualizarStatusVagas()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400 disabled:opacity-50">
-                            <option value="">Selecione a data primeiro</option>
-                            <option value="10:00">10:00</option>
-                            <option value="11:00">11:00</option>
-                            <option value="12:00">12:00</option>
-                            <option value="13:00">13:00 (1:00)</option>
-                            <option value="14:00">14:00 (2:00)</option>
-                            <option value="15:00">15:00 (3:00)</option>
+                        <select id="horario" required onchange="atualizarStatusVagas()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
+                            <option value="">Selecione primeiro a data</option>
                         </select>
                     </div>
 
                     <div class="bg-black p-3 border border-amber-500/20">
                         <div class="flex justify-between items-center text-xs">
-                            <span class="text-neutral-300">DISPONIBILIDADE:</span>
-                            <span id="status-vagas" class="px-2 py-1 bg-neutral-900 text-neutral-400 border border-neutral-800 font-bold">Aguardando dados</span>
+                            <span class="text-neutral-300">STATUS DO HORÁRIO:</span>
+                            <span id="status-vagas" class="px-2 py-1 bg-neutral-900 text-neutral-400 border border-neutral-800 font-bold">Aguardando data</span>
                         </div>
                     </div>
 
@@ -111,6 +105,8 @@
     </footer>
 
     <script>
+        const HORARIOS_PADRAO = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
+
         function carregarBanco() {
             return JSON.parse(localStorage.getItem('barberflow_db')) || [];
         }
@@ -130,24 +126,48 @@
             if (!isCliente) renderizarPainelAdmin();
         }
 
-        function checarDisponibilidade() {
+        function atualizarHorariosDisponiveis() {
             const dataSelecionada = document.getElementById('data').value;
             const selectHorario = document.getElementById('horario');
-            
+            const statusBadge = document.getElementById('status-vagas');
+            const btnEnviar = document.getElementById('btn-enviar');
+
+            selectHorario.innerHTML = '<option value="">Selecione o horário</option>';
+            statusBadge.textContent = "Selecione um horário";
+            statusBadge.className = "px-2 py-1 bg-neutral-900 text-neutral-400 border border-neutral-800 font-bold";
+            btnEnviar.disabled = true;
+
             if (!dataSelecionada) {
-                selectHorario.disabled = true;
-                selectHorario.value = "";
-                document.getElementById('status-vagas').textContent = "Selecione uma data";
-                document.getElementById('btn-enviar').disabled = true;
+                selectHorario.innerHTML = '<option value="">Selecione primeiro a data</option>';
+                statusBadge.textContent = "Aguardando data";
                 return;
             }
 
-            selectHorario.disabled = false;
-            atualizarStatusVagas();
+            const db = carregarBanco();
+            let horariosDisponiveisEncontrados = false;
+
+            HORARIOS_PADRAO.forEach(horario => {
+                // Verifica se já existe ALGUM agendamento para essa data e horário específicos
+                const jaAgendado = db.some(item => item.data === dataSelecionada && item.horario === horario);
+
+                // Se NÃO estiver agendado, o horário fica disponível para seleção
+                if (!jaAgendado) {
+                    horariosDisponiveisEncontrados = true;
+                    const option = document.createElement('option');
+                    option.value = horario;
+                    option.textContent = `${horario} (Disponível)`;
+                    selectHorario.appendChild(option);
+                }
+            });
+
+            if (!horariosDisponiveisEncontrados) {
+                selectHorario.innerHTML = '<option value="">Esgotado para esta data</option>';
+                statusBadge.textContent = "TODOS OS HORÁRIOS LOTADOS";
+                statusBadge.className = "px-2 py-1 bg-red-950/80 text-red-400 border border-red-900 font-bold";
+            }
         }
 
         function atualizarStatusVagas() {
-            const dataSelecionada = document.getElementById('data').value;
             const horarioSelecionado = document.getElementById('horario').value;
             const statusBadge = document.getElementById('status-vagas');
             const btnEnviar = document.getElementById('btn-enviar');
@@ -159,19 +179,9 @@
                 return;
             }
 
-            const db = carregarBanco();
-            const agendadosNoSlot = db.filter(item => item.data === dataSelecionada && item.horario === horarioSelecionado);
-            const vagasRestantes = 5 - agendadosNoSlot.length;
-
-            if (vagasRestantes <= 0) {
-                statusBadge.textContent = "ESGOTADO (0/5 VAGAS)";
-                statusBadge.className = "px-2 py-1 bg-red-950/80 text-red-400 border border-red-900 font-bold";
-                btnEnviar.disabled = true;
-            } else {
-                statusBadge.textContent = `${vagasRestantes} DE 5 VAGAS LIVRES`;
-                statusBadge.className = "px-2 py-1 bg-amber-950/60 text-amber-400 border border-amber-900/50 font-bold";
-                btnEnviar.disabled = false;
-            }
+            statusBadge.textContent = "HORÁRIO DISPONÍVEL";
+            statusBadge.className = "px-2 py-1 bg-amber-950/60 text-amber-400 border border-amber-900/50 font-bold";
+            btnEnviar.disabled = false;
         }
 
         function realizarAgendamento(e) {
@@ -183,11 +193,13 @@
             const horario = document.getElementById('horario').value;
 
             let db = carregarBanco();
-            const agendadosNoSlot = db.filter(item => item.data === data && item.horario === horario);
+            
+            // Validação final de segurança: verifica se o horário já foi ocupado por outro usuário nesse meio tempo
+            const jaAgendado = db.some(item => item.data === data && item.horario === horario);
 
-            if (agendadosNoSlot.length >= 5) {
-                alert("Infelizmente as vagas para este horário esgotaram!");
-                atualizarStatusVagas();
+            if (jaAgendado) {
+                alert("Infelizmente este horário acabou de ser ocupado por outro cliente!");
+                atualizarHorariosDisponiveis();
                 return;
             }
 
@@ -202,8 +214,8 @@
 
             alert("Agendamento realizado com sucesso!");
             document.getElementById('form-agendamento').reset();
-            document.getElementById('horario').disabled = true;
-            document.getElementById('status-vagas').textContent = "Aguardando dados";
+            document.getElementById('horario').innerHTML = '<option value="">Selecione primeiro a data</option>';
+            document.getElementById('status-vagas').textContent = "Aguardando data";
             document.getElementById('btn-enviar').disabled = true;
         }
 
@@ -231,7 +243,7 @@
         }
 
         function excluirAgendamento(id) {
-            if (confirm("Deseja realmente cancelar este agendamento e liberar a vaga?")) {
+            if (confirm("Deseja realmente cancelar este agendamento e liberar o horário?")) {
                 let db = carregarBanco();
                 db = db.filter(item => item.id !== id);
                 salvarBanco(db);
