@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarberFlow - Agendamentos</title>
+    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 text-center">
+        <h1 class="text-xl font-bold text-amber-400">💈 BarberFlow</h1>
+        <p class="text-xs text-slate-400">Gerenciamento de Vagas às 10:00</p>
+    </header>
+
+    <!-- Navegação por Abas -->
+    <nav class="flex border-b border-slate-700 bg-slate-800/50">
+        <button onclick="mudarAba('cliente')" id="btn-cliente" class="flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition">Agendar</button>
+        <button onclick="mudarAba('admin')" id="btn-admin" class="flex-1 py-3 text-center font-medium text-slate-400 transition">Painel (Admin)</button>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 p-4 max-w-md w-mx mx-auto w-full">
+
+        <!-- ABA 1: CLIENTE -->
+        <section id="aba-cliente" class="space-y-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                <h2 class="text-lg font-semibold mb-3 text-slate-200">Novo Agendamento</h2>
+                
+                <form id="form-agendamento" onsubmit="realizarAgendamento(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Seu Nome</label>
+                        <input type="text" id="nome" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400" placeholder="Ex: João Silva">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Seu WhatsApp</label>
+                        <input type="tel" id="telefone" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400" placeholder="Ex: 12999999999">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Data Desejada</label>
+                        <input type="date" id="data" required onchange="verificarVagas()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-amber-400">
+                    </div>
+
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-300">Horário Fixo: <strong>10:00</strong></span>
+                            <span id="status-vagas" class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">Selecione uma data</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-enviar" disabled class="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold py-2.5 rounded-lg transition">
+                        Confirmar Agendamento
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ABA 2: PAINEL ADMIN -->
+        <section id="aba-admin" class="hidden space-y-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg">
+                <h2 class="text-lg font-semibold mb-3 text-slate-200">Agendamentos Realizados</h2>
+                <div id="lista-agendamentos" class="space-y-2 text-sm text-slate-300">
+                    <p class="text-slate-500 text-center py-4">Nenhum agendamento carregado.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Simulando banco local via localStorage para demonstração imediata
+        function carregarBanco() {
+            return JSON.parse(localStorage.getItem('barberflow_db')) || [];
+        }
+
+        function salvarBanco(dados) {
+            localStorage.setItem('barberflow_db', JSON.stringify(dados));
+        }
+
+        function mudarAba(aba) {
+            const isCliente = aba === 'cliente';
+            document.getElementById('aba-cliente').classList.toggle('hidden', !isCliente);
+            document.getElementById('aba-admin').classList.toggle('hidden', isCliente);
+            
+            document.getElementById('btn-cliente').className = isCliente ? 'flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition' : 'flex-1 py-3 text-center font-medium text-slate-400 transition';
+            document.getElementById('btn-admin').className = !isCliente ? 'flex-1 py-3 text-center font-medium text-amber-400 border-b-2 border-amber-400 transition' : 'flex-1 py-3 text-center font-medium text-slate-400 transition';
+
+            if (!isCliente) renderizarPainelAdmin();
+        }
+
+        function verificarVagas() {
+            const dataSelecionada = document.getElementById('data').value;
+            if (!dataSelecionada) return;
+
+            const db = carregarBanco();
+            // Filtra agendamentos para a data selecionada às 10:00
+            const agendadosNoDia = db.filter(item => item.data === dataSelecionada && item.horario === '10:00');
+            const vagasRestantes = 5 - agendadosNoDia.length;
+
+            const statusBadge = document.getElementById('status-vagas');
+            const btnEnviar = document.getElementById('btn-enviar');
+
+            if (vagasRestantes <= 0) {
+                statusBadge.textContent = "Esgotado (0/5 vagas)";
+                statusBadge.className = "text-xs px-2 py-1 rounded bg-red-900/50 text-red-400 font-medium";
+                btnEnviar.disabled = true;
+            } else {
+                statusBadge.textContent = `${vagasRestantes} de 5 vagas disponíveis`;
+                statusBadge.className = "text-xs px-2 py-1 rounded bg-emerald-900/50 text-emerald-400 font-medium";
+                btnEnviar.disabled = false;
+            }
+        }
+
+        function realizarAgendamento(e) {
+            e.preventDefault();
+            const nome = document.getElementById('nome').value;
+            const telefone = document.getElementById('telefone').value;
+            const data = document.getElementById('data').value;
+            const horario = "10:00";
+
+            let db = carregarBanco();
+            const agendadosNoDia = db.filter(item => item.data === data && item.horario === horario);
+
+            if (agendadosNoDia.length >= 5) {
+                alert("Infelizmente as vagas para este dia esgotaram!");
+                return;
+            }
+
+            // Salva novo agendamento
+            const novoAgendamento = { id: Date.now(), nome, telefone, data, horario };
+            db.push(novoAgendamento);
+            salvarBanco(db);
+
+            // Dispara redirecionamento para o seu WhatsApp (12991421077)
+            const meuWhatsApp = "5512991421077";
+            const mensagem = `Novo Agendamento! 💈%0A*Cliente:* ${encodeURIComponent(nome)}%0A*Tel:* ${encodeURIComponent(telefone)}%0A*Data:* ${data}%0A*Horário:* 10:00`;
+            
+            // Abre o link do WhatsApp para notificar a central
+            window.open(`https://api.whatsapp.com/send?phone=${meuWhatsApp}&text=${mensagem}`, '_blank');
+
+            alert("Agendamento realizado com sucesso!");
+            document.getElementById('form-agendamento').reset();
+            document.getElementById('status-vagas').textContent = "Selecione uma data";
+            document.getElementById('btn-enviar').disabled = true;
+        }
+
+        function renderizarPainelAdmin() {
+            const db = carregarBanco();
+            const container = document.getElementById('lista-agendamentos');
+
+            if (db.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum agendamento registrado ainda.</p>`;
+                return;
+            }
+
+            container.innerHTML = db.map(item => `
+                <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold text-slate-200">${item.nome}</p>
+                        <p class="text-xs text-slate-400">📅 ${item.data} às ${item.horario} | 📱 ${item.telefone}</p>
+                    </div>
+                    <button onclick="excluirAgendamento(${item.id})" class="text-red-400 hover:text-red-300 text-xs bg-red-950/40 px-2.5 py-1.5 rounded border border-red-900/50">Cancelar</button>
+                </div>
+            `).join('');
+        }
+
+        function excluirAgendamento(id) {
+            if (confirm("Deseja realmente cancelar este agendamento e liberar a vaga?")) {
+                let db = carregarBanco();
+                db = db.filter(item => item.id !== id);
+                salvarBanco(db);
+                renderizarPainelAdmin();
+            }
+        }
+
+        // Registro do Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW falhou:', err));
+        }
+    </script>
+</body>
+</html>
