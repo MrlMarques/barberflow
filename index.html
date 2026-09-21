@@ -26,7 +26,7 @@
     <!-- Navegação por Abas -->
     <nav class="flex border-b border-amber-500/30 bg-neutral-950">
         <button onclick="mudarAba('cliente')" id="btn-cliente" class="flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider">AGENDAR</button>
-        <button onclick="mudarAba('admin')" id="btn-admin" class="flex-1 py-3 text-center font-bold text-neutral-500 transition tracking-wider">PAINEL (ADMIN)</button>
+        <button onclick="tentarAcessarAdmin()" id="btn-admin" class="flex-1 py-3 text-center font-bold text-neutral-500 transition tracking-wider">PAINEL (ADMIN)</button>
     </nav>
 
     <!-- Conteúdo Principal -->
@@ -91,9 +91,16 @@
             <div class="bg-neutral-950 p-5 rounded-none border border-amber-500/40 shadow-2xl relative">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600"></div>
                 
-                <h2 class="text-base font-bold mb-4 text-amber-400 tracking-wide uppercase">>> Agendamentos Ativos</h2>
+                <h2 class="text-base font-bold mb-4 text-amber-400 tracking-wide uppercase">>> Painel Administrativo</h2>
+                
+                <!-- Filtro por Data -->
+                <div class="mb-4">
+                    <label class="block text-xs text-amber-200/80 mb-1 uppercase tracking-wider">Filtrar por Data</label>
+                    <input type="date" id="filtro-data-admin" onchange="renderizarPainelAdmin()" class="w-full bg-black border border-amber-500/40 rounded-none p-2.5 text-white focus:outline-none focus:border-amber-400">
+                </div>
+
                 <div id="lista-agendamentos" class="space-y-3 text-sm text-neutral-300">
-                    <p class="text-neutral-600 text-center py-6">Nenhum agendamento carregado.</p>
+                    <p class="text-neutral-600 text-center py-6">Selecione uma data acima para ver os agendamentos.</p>
                 </div>
             </div>
         </section>
@@ -105,6 +112,7 @@
     </footer>
 
     <script>
+        const SENHA_ADMIN = "1234"; // 🔑 Altere aqui a sua senha se desejar
         const HORARIOS_PADRAO = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
 
         function carregarBanco() {
@@ -115,6 +123,15 @@
             localStorage.setItem('barberflow_db', JSON.stringify(dados));
         }
 
+        function tentarAcessarAdmin() {
+            const senhaDigitada = prompt("Digite a senha do Administrador:");
+            if (senhaDigitada === SENHA_ADMIN) {
+                mudarAba('admin');
+            } else if (senhaDigitada !== null) {
+                alert("Senha incorreta!");
+            }
+        }
+
         function mudarAba(aba) {
             const isCliente = aba === 'cliente';
             document.getElementById('aba-cliente').classList.toggle('hidden', !isCliente);
@@ -123,7 +140,15 @@
             document.getElementById('btn-cliente').className = isCliente ? 'flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider' : 'flex-1 py-3 text-center font-bold text-neutral-600 transition tracking-wider';
             document.getElementById('btn-admin').className = !isCliente ? 'flex-1 py-3 text-center font-bold text-amber-400 border-b-2 border-amber-400 transition tracking-wider' : 'flex-1 py-3 text-center font-bold text-neutral-600 transition tracking-wider';
 
-            if (!isCliente) renderizarPainelAdmin();
+            if (!isCliente) {
+                // Define a data de hoje por padrão no filtro admin se estiver vazio
+                const inputFiltro = document.getElementById('filtro-data-admin');
+                if (!inputFiltro.value) {
+                    const hoje = new Date().toISOString().split('T')[0];
+                    inputFiltro.value = hoje;
+                }
+                renderizarPainelAdmin();
+            }
         }
 
         function atualizarHorariosDisponiveis() {
@@ -147,10 +172,8 @@
             let horariosDisponiveisEncontrados = false;
 
             HORARIOS_PADRAO.forEach(horario => {
-                // Verifica se já existe ALGUM agendamento para essa data e horário específicos
                 const jaAgendado = db.some(item => item.data === dataSelecionada && item.horario === horario);
 
-                // Se NÃO estiver agendado, o horário fica disponível para seleção
                 if (!jaAgendado) {
                     horariosDisponiveisEncontrados = true;
                     const option = document.createElement('option');
@@ -193,8 +216,6 @@
             const horario = document.getElementById('horario').value;
 
             let db = carregarBanco();
-            
-            // Validação final de segurança: verifica se o horário já foi ocupado por outro usuário nesse meio tempo
             const jaAgendado = db.some(item => item.data === data && item.horario === horario);
 
             if (jaAgendado) {
@@ -221,20 +242,30 @@
 
         function renderizarPainelAdmin() {
             const db = carregarBanco();
+            const dataFiltro = document.getElementById('filtro-data-admin').value;
             const container = document.getElementById('lista-agendamentos');
 
-            if (db.length === 0) {
-                container.innerHTML = `<p class="text-neutral-600 text-center py-6 tracking-wide">Nenhum agendamento registrado.</p>`;
+            if (!dataFiltro) {
+                container.innerHTML = `<p class="text-neutral-600 text-center py-6 tracking-wide">Selecione uma data para visualizar.</p>`;
                 return;
             }
 
-            db.sort((a, b) => `${a.data} ${a.horario}`.localeCompare(`${b.data} ${b.horario}`));
+            // Filtra os agendamentos apenas para a data selecionada no admin
+            const agendamentosDoDia = db.filter(item => item.data === dataFiltro);
 
-            container.innerHTML = db.map(item => `
+            if (agendamentosDoDia.length === 0) {
+                container.innerHTML = `<p class="text-neutral-500 text-center py-6 tracking-wide">Nenhum agendamento para esta data.</p>`;
+                return;
+            }
+
+            // Ordena por horário (do mais cedo para o mais tarde)
+            agendamentosDoDia.sort((a, b) => a.horario.localeCompare(b.horario));
+
+            container.innerHTML = agendamentosDoDia.map(item => `
                 <div class="bg-black p-3 border border-amber-500/20 flex justify-between items-center">
                     <div>
-                        <p class="font-bold text-amber-300 tracking-wider">${item.nome} <span class="text-xs text-neutral-400 font-normal">(${item.servico || 'Corte'})</span></p>
-                        <p class="text-xs text-neutral-400 mt-0.5">[📅 ${item.data} ⏰ ${item.horario}]</p>
+                        <p class="font-bold text-amber-300 tracking-wider">⏰ ${item.horario} - ${item.nome}</p>
+                        <p class="text-xs text-neutral-400 mt-0.5">Serviço: ${item.servico || 'Corte'}</p>
                         <p class="text-xs text-neutral-500 mt-0.5">TEL: ${item.telefone}</p>
                     </div>
                     <button onclick="excluirAgendamento(${item.id})" class="text-red-400 hover:text-red-300 text-xs bg-red-950/40 px-2.5 py-1.5 border border-red-900/50 uppercase tracking-wider">Cancelar</button>
